@@ -2,6 +2,7 @@ from django.http.response import JsonResponse
 from django.contrib.sessions.backends.base import SessionBase
 from .models import *
 from django.http.request import HttpRequest
+import hashlib, time
 
 class BackendException(Exception):
   pass
@@ -16,6 +17,10 @@ STATUS_CODE = {
   2203: {"code": 2203},
 }
 
+def md5Encode(str:str):
+  md5 = hashlib.md5()
+  md5.update(str.encode())
+  return md5.hexdigest()
 
 def generateApiResponse(code:int=100,data:object=None):
   """_summary_
@@ -43,10 +48,10 @@ def generateApiResponse(code:int=100,data:object=None):
   return JsonResponse(respBody)
 
 def getUserByRequest(request: HttpRequest):
-  uid = request.GET.get("uid", None)
-  if not uid:
+  token = request.GET.get("token", None)
+  if not token:
     raise BackendException(generateApiResponse(2202))
-  user = User.objects.filter(id=uid).first()
+  user = User.objects.filter(token=token).first()
   if not user:
     raise BackendException(generateApiResponse(2201))
   return user
@@ -68,3 +73,6 @@ def getRequiredArgFromPostRequest(request: HttpRequest, **args):
       raise BackendException(generateApiResponse(2000))
     res.append(tmp)
   return tuple(res)
+
+def generateToken():
+  return md5Encode(str(time.time()))

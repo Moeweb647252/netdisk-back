@@ -16,7 +16,7 @@ def userLogin(request:HttpRequest):
   user = User.objects.filter(name=name).first()
   if not user:
     return generateApiResponse(2203)
-  if password != hashlib.md5(user.password):
+  if password != md5Encode(user.password):
     return generateApiResponse(2203)
   return generateApiResponse(1000, {
     "name": user.name,
@@ -31,9 +31,7 @@ def fsUserGetFiles(request:HttpRequest):
     user = getUserByRequest(request)
   except BackendException as e:
     return e.args[0]
-  path = request.GET.get("path")
-  if not path:
-    return generateApiResponse(2001)
+  path = request.GET.get("path", "")
   realPath = os.path.join(user.path, path)
   if not os.path.isdir(realPath):
     return generateApiResponse(2101)
