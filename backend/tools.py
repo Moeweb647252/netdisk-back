@@ -1,10 +1,19 @@
 from django.http.response import JsonResponse
+from django.contrib.sessions.backends.base import SessionBase
+from .models import *
+from django.http.request import HttpRequest
+
+class BackendException(Exception):
+  pass
 
 STATUS_CODE = {
   1000: {"code": 1000}, 
   2000: {"code": 2000}, 
   2001: {"code": 2001}, 
   2101: {"code": 2101}, 
+  2201: {"code": 2201},
+  2202: {"code": 2202},
+  2203: {"code": 2203},
 }
 
 
@@ -19,7 +28,10 @@ def generateApiResponse(code:int=100,data:object=None):
     1000: Success.
     2000: Error.
     2001: Error: Missing parameter.
-    2101: Error: File or Directory not found.
+    2101: FileSystem Error: File or Directory not found.
+    2201: Access Error: Permission Denied
+    2202: Access Error: Not logged in
+    2203: Access Error: Incorrect user credentials
  
   Returns:
     _type_: _description_
@@ -29,3 +41,30 @@ def generateApiResponse(code:int=100,data:object=None):
   respBody = STATUS_CODE[code].copy()
   respBody["data"] = data
   return JsonResponse(respBody)
+
+def getUserByRequest(request: HttpRequest):
+  uid = request.GET.get("uid", None)
+  if not uid:
+    raise BackendException(generateApiResponse(2202))
+  user = User.objects.filter(id=uid).first()
+  if not user:
+    raise BackendException(generateApiResponse(2201))
+  return user
+
+def getRequiredArgFromGetRequest(request: HttpRequest, *args):
+  res = []
+  for i in args:
+    tmp = request.GET.get(i)
+    if not tmp:
+      raise BackendException(generateApiResponse(2000))
+    res.append(tmp)
+  return tuple(res)
+
+def getRequiredArgFromPostRequest(request: HttpRequest, **args):
+  res = []
+  for i in args:
+    tmp = request.GET.get(i)
+    if not i:
+      raise BackendException(generateApiResponse(2000))
+    res.append(tmp)
+  return tuple(res)
