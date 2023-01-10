@@ -4,8 +4,9 @@ from .tools import *
 from .models import *
 from .storage import globalStorage
 from .urls import routeApi
-import os,time
-import hashlib
+import os
+import json
+import shutil
 
 @routeApi("user/login")
 def userLogin(request:HttpRequest):
@@ -49,11 +50,42 @@ def fsUserGetFiles(request:HttpRequest):
   ]
   return generateApiResponse(1000, res)
 
+def fsAllPasteFile(request:HttpRequest):
+  try:
+    fsType,pasteFiles,destPath,removeOrigin = getRequiredArgFromPostRequest(request, "fsType", "pasteFiles", "destPath", "removeOrigin")
+  except BackendException as e:
+    return e.args[0]
+  if fsType == "user":
+    user = getUserByRequest(request)
+    originPath = user.path
+    realDestPath = os.path.join(originPath,destPath)
+  pasteFiles = json.loads(pasteFiles)
+  if not os.path.exists(realDestPath):
+    return generateApiResponse(2101)
+  if not os.access(realDestPath, os.R_OK):
+    return generateApiResponse(2201)
+  for i in pasteFiles:
+    realPath = os.path.join(originPath,i)
+    if not os.path.exists(realPath):
+      return generateApiResponse(2101)
+    if not os.access(realPath, os.R_OK):
+      return generateApiResponse(2201)
+    if removeOrigin == "true":
+      if not os.access(realPath, os.W_OK):
+        return generateApiResponse(2201)
+      os.rename(realPath, os.path.join(destPath,os.path.split(realPath)[-1]))
+    else:
+      if os.path.isdir(realPath):
+        shutil.copytree(realPath, os.path.join(destPath,os.path.split(realPath)[-1]))
+      else:
+        shutil.copy(realPath, os.path.join(destPath,os.path.split(realPath)[-1]))
+  return generateApiResponse(1000)
+
 def userGetInfo(request:HttpRequest):
   pass
 
 def userSetInfo(request:HttpRequest):
   pass
 
-def fsGetDownloadLink(path, request:HttpRequest):
+def fsAllGetDownloadLink(path, request:HttpRequest):
   pass
