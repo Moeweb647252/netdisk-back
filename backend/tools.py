@@ -3,6 +3,7 @@ from django.contrib.sessions.backends.base import SessionBase
 from .models import *
 from django.http.request import HttpRequest
 import hashlib, time
+import json
 
 class BackendException(Exception):
   pass
@@ -49,7 +50,11 @@ def generateApiResponse(code:int=100,data:object=None):
 
 def getUserByRequest(request: HttpRequest):
   token = request.GET.get("token", None)
-  if not token:
+  if token is None:
+    token = request.POST.get("token", None)
+  if token is None:
+    token = json.loads(request.body).get("token")
+  if token is None:
     raise BackendException(generateApiResponse(2202))
   user = User.objects.filter(token=token).first()
   if not user:
@@ -65,11 +70,22 @@ def getRequiredArgFromGetRequest(request: HttpRequest, *args):
     res.append(tmp)
   return tuple(res)
 
-def getRequiredArgFromPostRequest(request: HttpRequest, **args):
+def getRequiredArgFromPostRequest(request: HttpRequest, *args):
   res = []
   for i in args:
-    tmp = request.GET.get(i)
-    if not i:
+    tmp = request.POST.get(i)
+    if not tmp:
+      raise BackendException(generateApiResponse(2000))
+    res.append(tmp)
+  return tuple(res)
+
+def getRequiredArgFromJsonRequest(request: HttpRequest, *args):
+  res = []
+  req:dict = json.loads(request.body)
+  for i in args:
+    tmp = req.get(i)
+    print(i, tmp)
+    if tmp is None:
       raise BackendException(generateApiResponse(2000))
     res.append(tmp)
   return tuple(res)

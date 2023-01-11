@@ -41,7 +41,7 @@ def fsUserGetFiles(request:HttpRequest):
       "name": i,
       "isDir": os.path.isdir(os.path.join(realPath,i)),
       "stat":os.stat(os.path.join(realPath,i)),
-      "path":path
+      "path": os.path.join(path, i)
     }
     for i in filter(
       lambda obj:not obj.startswith("."),
@@ -50,16 +50,16 @@ def fsUserGetFiles(request:HttpRequest):
   ]
   return generateApiResponse(1000, res)
 
+@routeApi("fs/all/paste")
 def fsAllPasteFile(request:HttpRequest):
   try:
-    fsType,pasteFiles,destPath,removeOrigin = getRequiredArgFromPostRequest(request, "fsType", "pasteFiles", "destPath", "removeOrigin")
+    fsType,pasteFiles,destPath,removeSource = getRequiredArgFromJsonRequest(request, "fsType", "pasteFiles", "destPath", "removeSource")
   except BackendException as e:
     return e.args[0]
   if fsType == "user":
     user = getUserByRequest(request)
     originPath = user.path
     realDestPath = os.path.join(originPath,destPath)
-  pasteFiles = json.loads(pasteFiles)
   if not os.path.exists(realDestPath):
     return generateApiResponse(2101)
   if not os.access(realDestPath, os.R_OK):
@@ -70,15 +70,15 @@ def fsAllPasteFile(request:HttpRequest):
       return generateApiResponse(2101)
     if not os.access(realPath, os.R_OK):
       return generateApiResponse(2201)
-    if removeOrigin == "true":
+    if removeSource == "True":
       if not os.access(realPath, os.W_OK):
         return generateApiResponse(2201)
-      os.rename(realPath, os.path.join(destPath,os.path.split(realPath)[-1]))
+      os.rename(realPath, os.path.join(realDestPath,os.path.split(realPath)[-1]))
     else:
       if os.path.isdir(realPath):
-        shutil.copytree(realPath, os.path.join(destPath,os.path.split(realPath)[-1]))
+        shutil.copytree(realPath, os.path.join(realDestPath,os.path.split(realPath)[-1]))
       else:
-        shutil.copy(realPath, os.path.join(destPath,os.path.split(realPath)[-1]))
+        shutil.copy(realPath, os.path.join(realDestPath,os.path.split(realPath)[-1]))
   return generateApiResponse(1000)
 
 def userGetInfo(request:HttpRequest):
