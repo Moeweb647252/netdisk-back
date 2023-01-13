@@ -26,10 +26,14 @@ def userLogin(request:HttpRequest):
   })
   
   
-@routeApi("fs/user/files")
+@routeApi("fs/files")
 def fsUserGetFiles(request:HttpRequest):
   try:
     user = getUserByRequest(request)
+  except BackendException as e:
+    return e.args[0]
+  try:
+    path, fsId = getRequiredArgFromGetRequest(request, "path", "fsId")
   except BackendException as e:
     return e.args[0]
   path = request.GET.get("path", "")
@@ -50,7 +54,7 @@ def fsUserGetFiles(request:HttpRequest):
   ]
   return generateApiResponse(1000, res)
 
-@routeApi("fs/all/paste")
+@routeApi("fs/paste")
 def fsAllPasteFile(request:HttpRequest):
   try:
     fsType,pasteFiles,destPath,removeSource = getRequiredArgFromJsonRequest(request, "fsType", "pasteFiles", "destPath", "removeSource")
@@ -85,7 +89,4 @@ def userGetInfo(request:HttpRequest):
   pass
 
 def userSetInfo(request:HttpRequest):
-  pass
-
-def fsAllGetDownloadLink(path, request:HttpRequest):
   pass
