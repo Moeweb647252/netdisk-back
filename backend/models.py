@@ -9,6 +9,8 @@ class FileSystem:
   group = models.BigIntegerField("所有组", default=-1)
   totalSpace = models.BigIntegerField("总空间")
   availableSpace = models.BigIntegerField("可用空间")
+  permissions = models.CharField("权限", max_length=16, default="n-n-rw")
+  
   class Meta:
     verbose_name = "文件系统"
     verbose_name_plural = "文件系统"

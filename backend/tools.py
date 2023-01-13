@@ -1,5 +1,4 @@
 from django.http.response import JsonResponse
-from django.contrib.sessions.backends.base import SessionBase
 from .models import *
 from django.http.request import HttpRequest
 import hashlib, time
@@ -92,3 +91,6 @@ def getRequiredArgFromJsonRequest(request: HttpRequest, *args):
 
 def generateToken():
   return md5Encode(str(time.time()))
+
+def checkPermission(fs: FileSystem, user:User):
+  pass
