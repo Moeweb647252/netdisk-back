@@ -2,14 +2,14 @@ from django.db import models
 
 # Create your models here.
 
-class FileSystem:
-  type = models.CharField("类型", max_length="32")
+class FileSystem(models.Model):
+  type = models.CharField("类型", max_length=32)
   path = models.TextField("路径")
-  user = models.BigIntegerField("所有者", default=-1)
-  group = models.BigIntegerField("所有组", default=-1)
-  totalSpace = models.BigIntegerField("总空间")
-  availableSpace = models.BigIntegerField("可用空间")
-  permissions = models.CharField("权限", max_length=16, default="n-n-rw")
+  owner_users = models.ManyToManyField('User', verbose_name="所有者")
+  owner_groups = models.ManyToManyField('Group', verbose_name="所有组")
+  total_space = models.BigIntegerField("总空间")
+  available_space = models.BigIntegerField("可用空间")
+  permissions = models.CharField("权限", max_length=16, default="006")
   
   class Meta:
     verbose_name = "文件系统"
@@ -17,13 +17,13 @@ class FileSystem:
 
   def __str__(self):
     if self.type == "group":
-      return "组文件系统+"+str(self.group)
+      return "组文件系统+"+str(self.owner_groups)
     elif self.type == "user":
-      return "用户文件系统+"+str(self.user)
+      return "用户文件系统+"+str(self.owner_users)
     elif self.type == "gshare":
-      return "组共享文件系统+"+str(self.group)
+      return "组共享文件系统+"+str(self.owner_groups)
     elif self.type == "ushare":
-      return "用户文件系统+"+str(self.user)
+      return "用户文件系统+"+str(self.owner_users)
 
 class User(models.Model):
   name = models.CharField("用户名", max_length=32)

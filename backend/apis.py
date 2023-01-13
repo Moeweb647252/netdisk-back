@@ -31,13 +31,18 @@ def fsUserGetFiles(request:HttpRequest):
   try:
     user = getUserByRequest(request)
   except BackendException as e:
-    return e.args[0]
+    user = None
   try:
     path, fsId = getRequiredArgFromGetRequest(request, "path", "fsId")
   except BackendException as e:
     return e.args[0]
-  path = request.GET.get("path", "")
-  realPath = os.path.join(user.path, path)
+  fs = FileSystem.objects.filter(id=fsId)
+  if len(fs) == 0:
+    return generateApiResponse(2301)
+  fs = fs.first()
+  if not checkPermission(fs, user, 2): # check permission for read operation
+    return generateApiResponse(2201)
+  realPath = os.path.join(fs.path, path)
   if not os.path.isdir(realPath):
     return generateApiResponse(2101)
   res = [
@@ -57,13 +62,21 @@ def fsUserGetFiles(request:HttpRequest):
 @routeApi("fs/paste")
 def fsAllPasteFile(request:HttpRequest):
   try:
-    fsType,pasteFiles,destPath,removeSource = getRequiredArgFromJsonRequest(request, "fsType", "pasteFiles", "destPath", "removeSource")
+    fsId,pasteFiles,destPath,removeSource = getRequiredArgFromJsonRequest(request, "fsId", "pasteFiles", "destPath", "removeSource")
   except BackendException as e:
     return e.args[0]
-  if fsType == "user":
+  fs = FileSystem.objects.get(id=fsId)
+  if len(fs) == 0:
+    return generateApiResponse(2301)
+  fs:FileSystem = fs.first()
+  try:
     user = getUserByRequest(request)
-    originPath = user.path
-    realDestPath = os.path.join(originPath,destPath)
+  except:
+    user = None
+  if not checkPermission(fs, user, 6): # check permission for read and write
+    return generateApiResponse(2201)
+  originPath = fs.path
+  realDestPath = os.path.join(originPath,destPath)
   if not os.path.exists(realDestPath):
     return generateApiResponse(2101)
   if not os.access(realDestPath, os.R_OK):

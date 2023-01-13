@@ -15,6 +15,7 @@ STATUS_CODE = {
   2201: {"code": 2201},
   2202: {"code": 2202},
   2203: {"code": 2203},
+  2301: {"code": 2301}
 }
 
 def md5Encode(str:str):
@@ -37,6 +38,7 @@ def generateApiResponse(code:int=100,data:object=None):
     2201: Access Error: Permission Denied
     2202: Access Error: Not logged in
     2203: Access Error: Incorrect user credentials
+    2301: UnknownError
  
   Returns:
     _type_: _description_
@@ -92,5 +94,18 @@ def getRequiredArgFromJsonRequest(request: HttpRequest, *args):
 def generateToken():
   return md5Encode(str(time.time()))
 
-def checkPermission(fs: FileSystem, user:User):
-  pass
+def checkPermission(fs: FileSystem, user:User, operate:int):
+  fsPermissions = [int(i) for i in fs.permissions]
+  permission = fsPermissions[0]
+  if not user is None:
+    if len(fs.owner_users.filter(id=user.id)):
+      permission = max(permission, fsPermissions[2])
+    for group in fs.owner_groups:
+        if len(user.group_set.filter(id=group.id)):
+          if fsPermissions[1] > permission:
+            permission = max(permission, fsPermissions[1])
+  if permission == operate:
+    return True
+  if permission == 6:
+    return True
+  return False
