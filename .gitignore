@@ -2,3 +2,5 @@
 
 **/__pycache__
 **/migrations
+/venv/
+/.gitignore
