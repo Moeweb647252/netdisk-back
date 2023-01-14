@@ -29,8 +29,9 @@ class User(models.Model):
   name = models.CharField("用户名", max_length=32)
   password = models.CharField("密码", max_length=32)
   token = models.CharField("Token", max_length=32)
-  permissionLevel = models.IntegerField("权限等级", default=0)
-  userFs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="用户文件系统", null=True, blank=True)
+  permission_level = models.IntegerField("权限等级", default=0)
+  fs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="用户文件系统", null=True, blank=True)
+  email = models.TextField("邮箱")
 
   class Meta:
     verbose_name = "用户"
@@ -42,8 +43,8 @@ class User(models.Model):
 class Group(models.Model):
   name = models.CharField("组名", max_length=128)
   users = models.ManyToManyField(User)
-  permissionLevel = models.IntegerField("权限等级", default=0)
-  userFs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="用户文件系统", null=True, blank=True)
+  permission_level = models.IntegerField("权限等级", default=0)
+  fs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="用户文件系统", null=True, blank=True)
   
   class Meta:
     verbose_name = "组"

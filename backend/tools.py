@@ -62,6 +62,19 @@ def getUserByRequest(request: HttpRequest):
     raise BackendException(generateApiResponse(2201))
   return user
 
+def getUserOrNoneByRequest(request: HttpRequest):
+  token = request.GET.get("token", None)
+  if token is None:
+    token = request.POST.get("token", None)
+  if token is None:
+    token = json.loads(request.body).get("token")
+  if token is None:
+    return None
+  user = User.objects.filter(token=token).first()
+  if not user:
+    return None
+  return user
+
 def getRequiredArgFromGetRequest(request: HttpRequest, *args):
   res = []
   for i in args:
@@ -94,18 +107,30 @@ def getRequiredArgFromJsonRequest(request: HttpRequest, *args):
 def generateToken():
   return md5Encode(str(time.time()))
 
-def checkPermission(fs: FileSystem, user:User, operate:int):
-  fsPermissions = [int(i) for i in fs.permissions]
-  permission = fsPermissions[0]
+def checkFsPermission(fs: FileSystem, user:User, operate:int):
+  fs_permissions = [int(i) for i in fs.permissions]
+  permission = fs_permissions[0]
   if not user is None:
     if len(fs.owner_users.filter(id=user.id)):
-      permission = max(permission, fsPermissions[2])
+      permission = max(permission, fs_permissions[2])
     for group in fs.owner_groups:
         if len(user.group_set.filter(id=group.id)):
-          if fsPermissions[1] > permission:
-            permission = max(permission, fsPermissions[1])
+          if fs_permissions[1] > permission:
+            permission = max(permission, fs_permissions[1])
   if permission == operate:
     return True
   if permission == 6:
     return True
   return False
+
+def checkFsPermissionExp(*args, **kwargs):
+  if checkFsPermission(*args, **kwargs):
+    return True
+  raise BackendException(generateApiResponse(2201))
+
+def getFsById(fs_id):
+  fs = FileSystem.objects.filter(id=fs_id)
+  if not len(fs):
+    raise BackendException(generateApiResponse(2301))
+  fs:FileSystem = fs.first()
+  return fs
