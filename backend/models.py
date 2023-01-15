@@ -45,6 +45,7 @@ class Group(models.Model):
   users = models.ManyToManyField(User)
   permission_level = models.IntegerField("权限等级", default=0)
   fs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="用户文件系统", null=True, blank=True)
+  admins = models.ManyToManyField(User, related_name="group_admins")
   
   class Meta:
     verbose_name = "组"

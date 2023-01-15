@@ -33,18 +33,18 @@ def fsUserGetFiles(request:HttpRequest):
 
 @routeApi("fs/paste")
 def fsAllPasteFile(request:HttpRequest):
-  fs_id,paste_files,dest_path,remove_source = getRequiredArgFromJsonRequest(request, "fs_id", "paste_files", "dest_path", "remove_source")
+  fs_id,paste_files,remove_source = getRequiredArgFromJsonRequest(request, "fs_id", "paste_files", "dest_path", "remove_source")
   fs = getFsById(fs_id)
   user = getUserOrNoneByRequest(request)
   checkFsPermissionExp(fs, user, 6) # check permission for read and write
   origin_path = fs.path
-  real_dest_path = os.path.join(origin_path,dest_path)
-  if not os.path.exists(real_dest_path):
-    return generateApiResponse(2101)
-  if not os.access(real_dest_path, os.R_OK):
-    return generateApiResponse(2201)
   for i in paste_files:
-    real_path = os.path.join(origin_path,i)
+    real_path = os.path.join(origin_path,i[0])
+    real_dest_path = os.path.join(origin_path,i[1])
+    if not os.path.exists(real_dest_path):
+      return generateApiResponse(2101)
+    if not os.access(real_dest_path, os.R_OK):
+      return generateApiResponse(2201)
     if not os.path.exists(real_path):
       return generateApiResponse(2101)
     if not os.access(real_path, os.R_OK):
@@ -70,6 +70,7 @@ def fsGetDownloadToken(request:HttpRequest):
   globalStorage.downloadLinks[token] = DownloadLink(int(time.time) + 86400, token, os.path.join(fs.path, path))
   return generateApiResponse(1000, {"token": token})
 
+@routeApi("user/getSelfInfo")
 def userGetSelfInfo(request:HttpRequest):
   user = getUserByRequest(request)
   return generateApiResponse(1000, {
@@ -79,20 +80,65 @@ def userGetSelfInfo(request:HttpRequest):
     "email": user.email
   })
 
-def userSetInfo(request:HttpRequest):
+@routeApi("user/setSelfInfo")
+def userSetSelfInfo(request:HttpRequest):
   pass
 
 @routeApi("user/login")
 def userLogin(request:HttpRequest):
   name,password = getRequiredArgFromPostRequest(request, "name", "password")
   user = User.objects.filter(name=name).first()
-  if not user:
+  if user is None:
     return generateApiResponse(2203)
   if password != md5Encode(user.password):
-    return generateApiResponse(2203)
+      return generateApiResponse(2203)
   return generateApiResponse(1000, {
     "name": user.name,
     "fs_id": user.fs.id,
     "permissionLevel": user.permission_level,
     "email": user.email
   })
+
+@routeApi("group/create")
+def groupCreate(request:HttpRequest):
+  name = getRequiredArgFromPostRequest(request, "name")
+  user = getUserByRequest(request)
+  group = Group(name=name)
+  group.save()
+  group.admins.add(user)
+  group.users.add(user)
+  return
+
+@routeApi("group/addUser")
+def groupAddUser(request:HttpRequest):
+  user_id, group_id = getRequiredArgFromGetRequest(request, "user_id", "group_id")
+  user = getUserByRequest(request)
+  #check if user one of the group's admin
+  group = Group.objects.filter(id=group_id).first()
+  if group is None:
+    return generateApiResponse(2301)
+  target_user = User.objects.filter(id=user_id).first()
+  if target_user is None:
+    return generateApiResponse(2301)
+  if not user in group.admins.all():
+    return generateApiResponse(2201)
+  group.users.add(target_user)
+  return generateApiResponse(1000)
+
+@routeApi("group/removeUser")
+def groupRemoveUser(request:HttpRequest):
+  user_id, group_id = getRequiredArgFromGetRequest(request, "user_id", "group_id")
+  user = getUserByRequest(request)
+  #check if user one of the group's admin
+  group = Group.objects.filter(id=group_id).first()
+  if group is None:
+    return generateApiResponse(2301)
+  target_user = User.objects.filter(id=user_id).first()
+  if target_user is None:
+    return generateApiResponse(2301)
+  if not user in group.admins.all():
+    return generateApiResponse(2201)
+  if target_user in group.users.all():
+    return generateApiResponse(2301)
+  return generateApiResponse(1000)
+

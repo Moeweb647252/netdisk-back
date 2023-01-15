@@ -49,19 +49,6 @@ def generateApiResponse(code:int=100,data:object=None):
   respBody["data"] = data
   return JsonResponse(respBody)
 
-def getUserByRequest(request: HttpRequest):
-  token = request.GET.get("token", None)
-  if token is None:
-    token = request.POST.get("token", None)
-  if token is None:
-    token = json.loads(request.body).get("token")
-  if token is None:
-    raise BackendException(generateApiResponse(2202))
-  user = User.objects.filter(token=token).first()
-  if not user:
-    raise BackendException(generateApiResponse(2201))
-  return user
-
 def getUserOrNoneByRequest(request: HttpRequest):
   token = request.GET.get("token", None)
   if token is None:
@@ -71,8 +58,14 @@ def getUserOrNoneByRequest(request: HttpRequest):
   if token is None:
     return None
   user = User.objects.filter(token=token).first()
-  if not user:
+  if user is None:
     return None
+  return user
+
+def getUserByRequest(request: HttpRequest):
+  user = getUserOrNoneByRequest(request)
+  if user is None:
+    raise BackendException(generateApiResponse(2201))
   return user
 
 def getRequiredArgFromGetRequest(request: HttpRequest, *args):
@@ -129,8 +122,8 @@ def checkFsPermissionExp(*args, **kwargs):
   raise BackendException(generateApiResponse(2201))
 
 def getFsById(fs_id):
-  fs = FileSystem.objects.filter(id=fs_id)
-  if not len(fs):
+  fs = FileSystem.objects.filter(id=fs_id).first()
+  if fs is None:
     raise BackendException(generateApiResponse(2301))
   fs:FileSystem = fs.first()
   return fs
