@@ -7,9 +7,11 @@ class FileSystem(models.Model):
   path = models.TextField("路径")
   owner_users = models.ManyToManyField('User', verbose_name="所有者")
   owner_groups = models.ManyToManyField('Group', verbose_name="所有组")
+  allowed_users = models.ManyToManyField('User', verbose_name="可访问用户", related_name="allowed_users")
   total_space = models.BigIntegerField("总空间")
   available_space = models.BigIntegerField("可用空间")
-  permissions = models.CharField("权限", max_length=16, default="006")
+  permissions = models.CharField("权限", max_length=16, default="006") # others group user
+  device = models.ForeignKey('Device', verbose_name="设备", on_delete=models.CASCADE)
   
   class Meta:
     verbose_name = "文件系统"
@@ -24,6 +26,10 @@ class FileSystem(models.Model):
       return "组共享文件系统+"+str(self.owner_groups)
     elif self.type == "ushare":
       return "用户文件系统+"+str(self.owner_users)
+
+class Device(models.Model):
+  name = models.CharField("设备名", max_length=128)
+  configures = models.TextField("配置")
 
 class User(models.Model):
   name = models.CharField("用户名", max_length=32)
@@ -50,6 +56,17 @@ class Group(models.Model):
   class Meta:
     verbose_name = "组"
     verbose_name_plural = "组"
+
+  def __str__(self):
+    return self.name
+
+class Settings(models.Model):
+  name = models.CharField("名称", max_length=128)
+  value = models.TextField("值")
+
+  class Meta:
+    verbose_name = "设置"
+    verbose_name_plural = "设置"
 
   def __str__(self):
     return self.name

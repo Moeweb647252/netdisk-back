@@ -38,7 +38,8 @@ def generateApiResponse(code:int=100,data:object=None):
     2201: Access Error: Permission Denied
     2202: Access Error: Not logged in
     2203: Access Error: Incorrect user credentials
-    2301: UnknownError
+    2301: InternalError
+    2401: Configure Error: Configuration Not found
  
   Returns:
     _type_: _description_
@@ -126,4 +127,22 @@ def getFsById(fs_id):
   if fs is None:
     raise BackendException(generateApiResponse(2301))
   fs:FileSystem = fs.first()
+  return fs
+
+def getSettingsItem(name):
+  item = Settings.objects.filter(name=name).first()
+  if item is None:
+    raise BackendException(generateApiResponse(2401))
+  return item
+
+def createGroupFs(group:Group, name:str, device_id:int=None):
+  if device_id is None:
+    device_id = getSettingsItem("DefaultDevice").value
+  fs = FileSystem(
+    name=name,
+    owner_groups=[group],
+    owner_users=[i for i in group.admins],
+    permissions="",
+  )
+  fs.save()
   return fs

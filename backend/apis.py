@@ -107,11 +107,13 @@ def groupCreate(request:HttpRequest):
   group.save()
   group.admins.add(user)
   group.users.add(user)
-  return
+  group.save()
+  createGroupFs(group, group.name)
+  return generateApiResponse(1000)
 
 @routeApi("group/addUser")
 def groupAddUser(request:HttpRequest):
-  user_id, group_id = getRequiredArgFromGetRequest(request, "user_id", "group_id")
+  user_id, group_id = getRequiredArgFromGetRequest(request, "user_id", "group_id")  
   user = getUserByRequest(request)
   #check if user one of the group's admin
   group = Group.objects.filter(id=group_id).first()
@@ -141,4 +143,3 @@ def groupRemoveUser(request:HttpRequest):
   if target_user in group.users.all():
     return generateApiResponse(2301)
   return generateApiResponse(1000)
-
