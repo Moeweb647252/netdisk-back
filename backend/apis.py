@@ -1,12 +1,10 @@
-from django.http.response import JsonResponse
 from django.http.request import HttpRequest
 from .tools import *
 from .models import *
 from .storage import *
 from .urls import routeApi
 import os
-import json
-import shutil  
+import shutil
   
 @routeApi("fs/files")
 def fsUserGetFiles(request:HttpRequest):
