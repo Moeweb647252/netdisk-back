@@ -38,6 +38,7 @@ class User(models.Model):
   permission_level = models.IntegerField("权限等级", default=0)
   fs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="用户文件系统", null=True, blank=True)
   email = models.TextField("邮箱")
+  rss_subscriptions = models.ManyToManyField('RSS', verbose_name="订阅")
 
   class Meta:
     verbose_name = "用户"
@@ -50,7 +51,7 @@ class Group(models.Model):
   name = models.CharField("组名", max_length=128)
   users = models.ManyToManyField(User)
   permission_level = models.IntegerField("权限等级", default=0)
-  fs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="用户文件系统", null=True, blank=True)
+  fs = models.ForeignKey(FileSystem, models.DO_NOTHING, verbose_name="组文件系统", null=True, blank=True)
   admins = models.ManyToManyField(User, related_name="group_admins")
   
   class Meta:
@@ -70,3 +71,45 @@ class Settings(models.Model):
 
   def __str__(self):
     return self.name
+
+class DownloadToken(models.Model):
+  path = models.TextField("路径")
+  token = models.CharField("Token", max_length=32)
+  valid_time = models.DateTimeField("有效时间")
+  
+  class Meta:
+    verbose_name = "下载Token"
+    verbose_name_plural = "下载Token"
+  
+  def __str__(self):
+    return self.path
+
+class RSS(models.Model):
+  name = models.CharField("名称", max_length=128)
+  url = models.TextField("URL")
+  last_update = models.DateTimeField("最后更新时间")
+  last_update_count = models.IntegerField("最后更新数量")
+  description = models.TextField("描述")
+  cover = models.TextField("封面")
+
+  class Meta:
+    verbose_name = "RSS"
+    verbose_name_plural = "RSS"
+
+  def __str__(self):
+    return self.name
+
+class RSSItems(models.Model):
+  rss = models.ForeignKey(RSS, models.DO_NOTHING, verbose_name="RSS")
+  title = models.CharField("标题", max_length=128)
+  link = models.TextField("链接")
+  description = models.TextField("描述")
+  pub_date = models.DateTimeField("发布时间")
+  cover = models.TextField("封面")
+
+  class Meta:
+    verbose_name = "RSS条目"
+    verbose_name_plural = "RSS条目"
+
+  def __str__(self):
+    return self.title

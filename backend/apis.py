@@ -141,3 +141,18 @@ def groupRemoveUser(request:HttpRequest):
   if target_user in group.users.all():
     return generateApiResponse(2301)
   return generateApiResponse(1000)
+
+@routeApi("rss/getAll")
+def rssGetAll(request:HttpRequest):
+  user = getUserByRequest(request)
+  return generateApiResponse(1000, user.rss_subscriptions.all())
+
+@routeApi("rss/add")
+def rssAdd(request:HttpRequest):
+  user = getUserByRequest(request)
+  url = getRequiredArgFromPostRequest(request, "url")
+  rss = RSS(url=url)
+  
+  rss.save()
+  user.rss_subscriptions.add(rss)
+  return generateApiResponse(1000)
